@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="./recursos/imagenes/LogoFinal.png" type="image/png">
+    <title>Admin | Cuchillería Toto</title>
+    <link rel="stylesheet" href="./recursos/css/admin.css">
+</head>
+<body>
+
+<!-- ===== PANTALLA LOGIN ===== -->
+<div id="pantalla-login">
+    <div class="login-card">
+        <img src="./recursos/imagenes/LogoFinal.png" alt="Logo">
+        <h1>Panel de Administración</h1>
+        <p>Cuchillería Toto</p>
+        <input type="text" id="input-usuario" placeholder="Usuario" autocomplete="username">
+        <input type="password" id="input-contrasena" placeholder="Contraseña" autocomplete="current-password">
+        <button class="btn-primary" onclick="iniciarSesion()">Ingresar</button>
+        <p class="error-msg" id="error-login">Usuario o contraseña incorrectos</p>
+    </div>
+</div>
+
+<!-- ===== PANEL ADMIN ===== -->
+<div id="pantalla-admin">
+    <header class="admin-header">
+        <div class="admin-header-left">
+            <div class="logo-admin">
+                <img src="./recursos/imagenes/LogoFinal.png" alt="Logo">
+            </div>
+            <h2>Panel de Administración</h2>
+        </div>
+        <div class="admin-header-right">
+            <a href="index.html" target="_blank">
+                <button class="btn-secondary">Ver inicio</button>
+            </a>
+            <a href="catalogo.html" target="_blank">
+                <button class="btn-secondary">Ver catálogo</button>
+            </a>
+            <button class="btn-danger" onclick="cerrarSesion()">Cerrar sesión</button>
+        </div>
+    </header>
+
+    <div class="admin-tabs">
+        <button class="tab-btn tab-activo" id="tab-catalogo" onclick="cambiarTab('catalogo', this)">📦 Catálogo</button>
+        <button class="tab-btn" id="tab-galeria" onclick="cambiarTab('galeria', this)">🖼️ Galería</button>
+    </div>
+
+    <!-- SECCIÓN CATÁLOGO -->
+    <div class="admin-main" id="seccion-catalogo">
+        <div class="admin-titulo">
+            <h3>Productos del catálogo</h3>
+            <button class="btn-primary" style="width:auto; padding: 10px 24px;" onclick="mostrarFormularioCatalogo()">
+                + Agregar producto
+            </button>
+        </div>
+
+        <div class="form-card" id="form-card-catalogo">
+            <h4 id="form-titulo-catalogo">Nuevo producto</h4>
+            <input type="hidden" id="campo-id">
+            <input type="hidden" id="campo-imagen-actual">
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Nombre del cuchillo</label>
+                    <input type="text" id="campo-nombre" placeholder="Ej: Cuchillo número 30">
+                </div>
+                <div class="form-group">
+                    <label>Precio ($)</label>
+                    <input type="number" id="campo-precio" placeholder="Ej: 150000">
+                </div>
+                <div class="form-group">
+                    <label>Medidas</label>
+                    <input type="text" id="campo-medidas" placeholder="Ej: 17cm de hoja, 28cm en total">
+                </div>
+                <div class="form-group">
+                    <label>Material</label>
+                    <input type="text" id="campo-material" placeholder="Ej: Acero Inoxidable">
+                </div>
+                <div class="form-group">
+                    <label>Mango (Cabo)</label>
+                    <input type="text" id="campo-cabo" placeholder="Ej: Quebracho">
+                </div>
+                <div class="form-group">
+                    <label>Foto del producto</label>
+                    <input type="file" id="campo-imagen" accept="image/*" onchange="previsualizarImagen(this, 'preview-img-catalogo')">
+                    <img id="preview-img-catalogo" class="preview-img" alt="Vista previa">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn-primary" style="width:auto; padding:10px 28px;" onclick="guardarProducto()">Guardar</button>
+                <button class="btn-secondary" onclick="ocultarFormularioCatalogo()">Cancelar</button>
+            </div>
+        </div>
+
+        <div class="productos-grid" id="productos-grid"></div>
+    </div>
+
+    <!-- SECCIÓN GALERÍA -->
+    <div class="admin-main" id="seccion-galeria" style="display:none;">
+        <div class="admin-titulo">
+            <h3>Imágenes de la galería</h3>
+            <button class="btn-primary" style="width:auto; padding: 10px 24px;" onclick="mostrarFormularioGaleria()">
+                + Agregar imagen
+            </button>
+        </div>
+
+        <p class="galeria-info">
+            Estas imágenes aparecen en la sección <strong>"Algunos de nuestros productos"</strong> de la página de inicio.
+        </p>
+
+        <div class="form-card" id="form-card-galeria">
+            <h4>Nueva imagen de galería</h4>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Nombre / Descripción</label>
+                    <input type="text" id="galeria-nombre" placeholder="Ej: Cuchillo número 30">
+                </div>
+                <div class="form-group">
+                    <label>Foto</label>
+                    <input type="file" id="galeria-imagen" accept="image/*" onchange="previsualizarImagen(this, 'preview-img-galeria')">
+                    <img id="preview-img-galeria" class="preview-img" alt="Vista previa">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn-primary" style="width:auto; padding:10px 28px;" onclick="guardarItemGaleria()">Agregar</button>
+                <button class="btn-secondary" onclick="ocultarFormularioGaleria()">Cancelar</button>
+            </div>
+        </div>
+
+        <div class="productos-grid" id="galeria-grid"></div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const USUARIO     = 'toto';
+    const CONTRASENA  = 'valepalopedro';
+    const STORAGE_KEY = 'catalogo_admin';
+    const GALERIA_KEY = 'galeria_admin';
+    const SESSION_KEY = 'admin_sesion';
+
+    let catalogoBase = [];
+    let galeriaBase  = [];
+    let editandoId   = null;
+
+    // ── TABS ──────────────────────────────────────────────────────────
+    function cambiarTab(tab, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-activo'));
+        btn.classList.add('tab-activo');
+        document.getElementById('seccion-catalogo').style.display = tab === 'catalogo' ? 'block' : 'none';
+        document.getElementById('seccion-galeria').style.display  = tab === 'galeria'  ? 'block' : 'none';
+        if (tab === 'galeria') renderizarGaleria();
+    }
+
+    // ── CARGA ─────────────────────────────────────────────────────────
+    async function cargarCatalogoBase() {
+        const guardado = localStorage.getItem(STORAGE_KEY);
+        catalogoBase = guardado ? JSON.parse(guardado) : await (await fetch('./datos/json/catalogo.json')).json();
+    }
+
+    async function cargarGaleriaBase() {
+        const guardado = localStorage.getItem(GALERIA_KEY);
+        galeriaBase = guardado ? JSON.parse(guardado) : await (await fetch('./datos/json/galeria.json')).json();
+    }
+
+    function guardarCatalogoStorage() { localStorage.setItem(STORAGE_KEY, JSON.stringify(catalogoBase)); }
+    function guardarGaleriaStorage()  { localStorage.setItem(GALERIA_KEY,  JSON.stringify(galeriaBase));  }
+
+    // ── LOGIN ─────────────────────────────────────────────────────────
+    function iniciarSesion() {
+        const u = document.getElementById('input-usuario').value.trim();
+        const p = document.getElementById('input-contrasena').value;
+        if (u === USUARIO && p === CONTRASENA) {
+            sessionStorage.setItem(SESSION_KEY, '1');
+            mostrarAdmin();
+        } else {
+            document.getElementById('error-login').style.display = 'block';
+        }
+    }
+
+    document.getElementById('input-contrasena').addEventListener('keydown', e => {
+        if (e.key === 'Enter') iniciarSesion();
+    });
+
+    function cerrarSesion() { sessionStorage.removeItem(SESSION_KEY); location.reload(); }
+
+    async function mostrarAdmin() {
+        document.getElementById('pantalla-login').style.display = 'none';
+        document.getElementById('pantalla-admin').style.display = 'block';
+        await cargarCatalogoBase();
+        await cargarGaleriaBase();
+        renderizarProductos();
+    }
+
+    // ── IMAGEN UTILS ──────────────────────────────────────────────────
+    function previsualizarImagen(input, previewId) {
+        const archivo = input.files[0];
+        if (!archivo) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = document.getElementById(previewId);
+            img.src = e.target.result;
+            img.style.display = 'block';
+        };
+        reader.readAsDataURL(archivo);
+    }
+
+    function leerArchivoComoBase64(archivo) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = () => reject(new Error('Error leyendo archivo'));
+            reader.onload = e => {
+                const img = new Image();
+                img.onerror = () => reject(new Error('Error cargando imagen'));
+                img.onload = () => {
+                    try {
+                        const MAX = 800;
+                        let w = img.width, h = img.height;
+                        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', 0.75));
+                    } catch(err) { reject(err); }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(archivo);
+        });
+    }
+
+    // ══ CATÁLOGO ══════════════════════════════════════════════════════
+    function renderizarProductos() {
+        const grid = document.getElementById('productos-grid');
+        grid.innerHTML = '';
+        if (catalogoBase.length === 0) {
+            grid.innerHTML = '<p class="sin-productos">No hay productos aún. Agregá el primero.</p>';
+            return;
+        }
+        catalogoBase.forEach(p => {
+            const card = document.createElement('div');
+            card.classList.add('prod-card');
+            card.innerHTML = `
+                <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='./recursos/imagenes/LogoFinal.png'">
+                <div class="prod-card-body">
+                    <h4>${p.nombre}</h4>
+                    <p><strong>Medidas:</strong> ${p.medidas}</p>
+                    <p><strong>Material:</strong> ${p.material}</p>
+                    <p><strong>Mango:</strong> ${p.cabo}</p>
+                    <p class="precio">$${Number(p.precio).toLocaleString('es-AR')}</p>
+                </div>
+                <div class="prod-card-actions">
+                    <button class="btn-editar" onclick="editarProducto(${p.id})">✏️ Editar</button>
+                    <button class="btn-borrar" onclick="borrarProducto(${p.id})">🗑️ Borrar</button>
+                </div>`;
+            grid.appendChild(card);
+        });
+    }
+
+    function mostrarFormularioCatalogo(limpiar = true) {
+        if (limpiar) {
+            limpiarFormularioCatalogo();
+            document.getElementById('form-titulo-catalogo').textContent = 'Nuevo producto';
+            editandoId = null;
+        }
+        const form = document.getElementById('form-card-catalogo');
+        form.classList.add('visible');
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function ocultarFormularioCatalogo() {
+        document.getElementById('form-card-catalogo').classList.remove('visible');
+        limpiarFormularioCatalogo();
+        editandoId = null;
+    }
+
+    function limpiarFormularioCatalogo() {
+        ['campo-nombre','campo-precio','campo-medidas','campo-material','campo-cabo'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        document.getElementById('campo-id').value = '';
+        document.getElementById('campo-imagen-actual').value = '';
+        document.getElementById('campo-imagen').value = '';
+        const prev = document.getElementById('preview-img-catalogo');
+        prev.style.display = 'none'; prev.src = '';
+    }
+
+    function editarProducto(id) {
+        const prod = catalogoBase.find(p => p.id === id);
+        if (!prod) return;
+        editandoId = id;
+        document.getElementById('form-titulo-catalogo').textContent = 'Editar producto';
+        document.getElementById('campo-id').value       = prod.id;
+        document.getElementById('campo-nombre').value   = prod.nombre;
+        document.getElementById('campo-precio').value   = prod.precio;
+        document.getElementById('campo-medidas').value  = prod.medidas;
+        document.getElementById('campo-material').value = prod.material;
+        document.getElementById('campo-cabo').value     = prod.cabo;
+        document.getElementById('campo-imagen-actual').value = prod.imagen;
+        const img = document.getElementById('preview-img-catalogo');
+        img.src = prod.imagen; img.style.display = 'block';
+        mostrarFormularioCatalogo(false);
+    }
+
+    async function guardarProducto() {
+        const nombre   = document.getElementById('campo-nombre').value.trim();
+        const precio   = document.getElementById('campo-precio').value.trim();
+        const medidas  = document.getElementById('campo-medidas').value.trim();
+        const material = document.getElementById('campo-material').value.trim();
+        const cabo     = document.getElementById('campo-cabo').value.trim();
+        const archivoInput = document.getElementById('campo-imagen');
+        const imagenActual = document.getElementById('campo-imagen-actual').value;
+
+        if (!nombre || !precio || !medidas || !material || !cabo) {
+            mostrarToast('⚠️ Completá todos los campos'); return;
+        }
+
+        let imagenFinal = imagenActual;
+        if (archivoInput.files.length > 0) {
+            try { imagenFinal = await leerArchivoComoBase64(archivoInput.files[0]); }
+            catch { mostrarToast('⚠️ Error al procesar la imagen'); return; }
+        }
+
+        if (!imagenFinal) { mostrarToast('⚠️ Agregá una foto del producto'); return; }
+
+        if (editandoId !== null) {
+            const idx = catalogoBase.findIndex(p => p.id === editandoId);
+            catalogoBase[idx] = { id: editandoId, nombre, imagen: imagenFinal, medidas, material, cabo, precio: Number(precio) };
+            mostrarToast('✅ Producto actualizado');
+        } else {
+            const nuevoId = catalogoBase.length > 0 ? Math.max(...catalogoBase.map(p => p.id)) + 1 : 1;
+            catalogoBase.push({ id: nuevoId, nombre, imagen: imagenFinal, medidas, material, cabo, precio: Number(precio) });
+            mostrarToast('✅ Producto agregado');
+        }
+
+        guardarCatalogoStorage();
+        renderizarProductos();
+        ocultarFormularioCatalogo();
+    }
+
+    function borrarProducto(id) {
+        const prod = catalogoBase.find(p => p.id === id);
+        if (!confirm(`¿Seguro que querés borrar "${prod.nombre}" del catálogo?`)) return;
+        catalogoBase = catalogoBase.filter(p => p.id !== id);
+        guardarCatalogoStorage();
+        renderizarProductos();
+        mostrarToast('🗑️ Producto eliminado');
+    }
+
+    // ══ GALERÍA ═══════════════════════════════════════════════════════
+    function renderizarGaleria() {
+        const grid = document.getElementById('galeria-grid');
+        grid.innerHTML = '';
+        if (galeriaBase.length === 0) {
+            grid.innerHTML = '<p class="sin-productos">No hay imágenes en la galería. Agregá la primera.</p>';
+            return;
+        }
+        galeriaBase.forEach(item => {
+            const card = document.createElement('div');
+            card.classList.add('prod-card');
+            card.innerHTML = `
+                <div class="galeria-card-badge">Galería inicio</div>
+                <img src="${item.imagen}" alt="${item.nombre}" onerror="this.src='./recursos/imagenes/LogoFinal.png'" style="height:200px;object-fit:cover;width:100%;display:block;">
+                <div class="prod-card-body">
+                    <h4>${item.nombre}</h4>
+                </div>
+                <div class="prod-card-actions">
+                    <button class="btn-borrar" style="flex:1;" onclick="borrarItemGaleria(${item.id})">🗑️ Quitar de galería</button>
+                </div>`;
+            grid.appendChild(card);
+        });
+    }
+
+    function mostrarFormularioGaleria() {
+        limpiarFormularioGaleria();
+        const form = document.getElementById('form-card-galeria');
+        form.classList.add('visible');
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function ocultarFormularioGaleria() {
+        document.getElementById('form-card-galeria').classList.remove('visible');
+        limpiarFormularioGaleria();
+    }
+
+    function limpiarFormularioGaleria() {
+        document.getElementById('galeria-nombre').value = '';
+        document.getElementById('galeria-imagen').value = '';
+        const prev = document.getElementById('preview-img-galeria');
+        prev.style.display = 'none'; prev.src = '';
+    }
+
+    async function guardarItemGaleria() {
+        const nombre = document.getElementById('galeria-nombre').value.trim();
+        const archivoInput = document.getElementById('galeria-imagen');
+
+        if (!nombre) { mostrarToast('⚠️ Escribí un nombre para la imagen'); return; }
+        if (archivoInput.files.length === 0) { mostrarToast('⚠️ Seleccioná una foto'); return; }
+
+        let imagenFinal;
+        try { imagenFinal = await leerArchivoComoBase64(archivoInput.files[0]); }
+        catch { mostrarToast('⚠️ Error al procesar la imagen'); return; }
+
+        const nuevoId = galeriaBase.length > 0 ? Math.max(...galeriaBase.map(g => g.id)) + 1 : 1;
+        galeriaBase.push({ id: nuevoId, nombre, imagen: imagenFinal });
+        guardarGaleriaStorage();
+        renderizarGaleria();
+        ocultarFormularioGaleria();
+        mostrarToast('✅ Imagen agregada a la galería');
+    }
+
+    function borrarItemGaleria(id) {
+        const item = galeriaBase.find(g => g.id === id);
+        if (!confirm(`¿Seguro que querés quitar "${item.nombre}" de la galería?`)) return;
+        galeriaBase = galeriaBase.filter(g => g.id !== id);
+        guardarGaleriaStorage();
+        renderizarGaleria();
+        mostrarToast('🗑️ Imagen eliminada de la galería');
+    }
+
+    // ── TOAST ─────────────────────────────────────────────────────────
+    function mostrarToast(mensaje) {
+        const toast = document.getElementById('toast');
+        toast.textContent = mensaje;
+        toast.classList.add('visible');
+        setTimeout(() => toast.classList.remove('visible'), 3000);
+    }
+
+    // ── INICIO ────────────────────────────────────────────────────────
+    if (sessionStorage.getItem(SESSION_KEY) === '1') mostrarAdmin();
+</script>
+</body>
+</html>
